@@ -6,7 +6,6 @@ import {
   GRADE_ADVICE,
   GRADE_OPTIONS,
   QUESTIONS,
-  SCORE_BAND_COMMENT,
   SCORE_BAND_OPTIONS,
   TYPE_RESULT_CONTENT,
   calculateDiagnosis,
@@ -77,6 +76,7 @@ export default function HomePage() {
   const [answers, setAnswers] = useState<Partial<Record<QuestionId, number>>>({});
   const [result, setResult] = useState<ResultState | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
 
   const currentQuestion = QUESTIONS[questionIndex];
   const progressPercent = ((questionIndex + 1) / QUESTIONS.length) * 100;
@@ -159,6 +159,12 @@ export default function HomePage() {
   }
 
   function handleAnswerSelect(value: number) {
+    if (selectedAnswer !== null) {
+      return;
+    }
+
+    setSelectedAnswer(value);
+
     const nextAnswers = {
       ...answers,
       [currentQuestion.id]: value
@@ -166,16 +172,20 @@ export default function HomePage() {
 
     setAnswers(nextAnswers);
 
-    if (questionIndex < QUESTIONS.length - 1) {
-      setQuestionIndex((index) => index + 1);
-      return;
-    }
+    window.setTimeout(() => {
+      setSelectedAnswer(null);
 
-    const completeAnswers = toCompleteAnswers(nextAnswers);
-    const localResult = calculateDiagnosis(completeAnswers);
-    setResult(localResult);
-    setStep("result");
-    void submitDiagnosis(completeAnswers, localResult);
+      if (questionIndex < QUESTIONS.length - 1) {
+        setQuestionIndex((index) => index + 1);
+        return;
+      }
+
+      const completeAnswers = toCompleteAnswers(nextAnswers);
+      const localResult = calculateDiagnosis(completeAnswers);
+      setResult(localResult);
+      setStep("result");
+      void submitDiagnosis(completeAnswers, localResult);
+    }, 180);
   }
 
   function restart() {
@@ -186,17 +196,12 @@ export default function HomePage() {
     setAnswers({});
     setResult(null);
     setSaveState("idle");
+    setSelectedAnswer(null);
   }
 
   return (
     <main className="app-page">
       <div className="mobile-shell">
-        <div className="brand-strip" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
-
         {step === "start" && (
           <section className="screen-card start-screen">
             <p className="eyebrow">5분 공부유형 테스트</p>
@@ -230,7 +235,7 @@ export default function HomePage() {
             <div className="choice-list">
               {GRADE_OPTIONS.map((option) => (
                 <button
-                  className="choice-card"
+                  className={`choice-card ${grade === option.value ? "selected" : ""}`}
                   type="button"
                   key={option.value}
                   onClick={() => handleGradeSelect(option.value)}
@@ -257,7 +262,7 @@ export default function HomePage() {
             <div className="choice-list compact">
               {SCORE_BAND_OPTIONS.map((option) => (
                 <button
-                  className="choice-card simple"
+                  className={`choice-card simple ${scoreBand === option.value ? "selected" : ""}`}
                   type="button"
                   key={option.value}
                   onClick={() => handleScoreBandSelect(option.value)}
@@ -281,6 +286,7 @@ export default function HomePage() {
                     return;
                   }
                   setQuestionIndex((index) => index - 1);
+                  setSelectedAnswer(null);
                 }}
               >
                 이전
@@ -299,9 +305,10 @@ export default function HomePage() {
             <div className="answer-list">
               {ANSWER_OPTIONS.map((option) => (
                 <button
-                  className="answer-button"
+                  className={`answer-button ${selectedAnswer === option.value ? "selected" : ""}`}
                   type="button"
                   key={option.value}
+                  disabled={selectedAnswer !== null}
                   onClick={() => handleAnswerSelect(option.value)}
                 >
                   {option.label}
@@ -313,23 +320,38 @@ export default function HomePage() {
 
         {step === "result" && result && grade && scoreBand && (
           <section className="screen-card result-card">
-            <p className="eyebrow">나의 공부유형 결과</p>
-            <h2>당신의 공부 코드는</h2>
-            <div className="study-code" aria-label={`공부 코드 ${result.studyCode}`}>
-              {result.studyCode}
+            <div className="result-panel result-summary-card">
+              <p className="eyebrow">나의 공부유형 결과</p>
+              <h2>공부가 점수로 쌓이지 않는 이유를 확인했어요.</h2>
+              <p>
+                {getGradeLabel(grade)} · {getScoreBandLabel(scoreBand)} 기준으로 현재 공부 흐름을
+                간단히 정리했습니다.
+              </p>
             </div>
-            <p className="code-summary">
-              {getStudyCodeSummary(result.studyCode)
-                .split("\n")
-                .map((line) => (
-                  <span key={line}>
-                    {line}
-                    <br />
-                  </span>
-                ))}
-            </p>
 
-            <div className="result-note">
+            <div className="result-panel code-card">
+              <p className="section-kicker">당신의 공부 코드는</p>
+              <div className="study-code" aria-label={`공부 코드 ${result.studyCode}`}>
+                {result.studyCode}
+              </div>
+            </div>
+
+            <div className="result-panel interpretation-card">
+              <h3>코드 해석</h3>
+              <div className="code-summary">
+                {getStudyCodeSummary(result.studyCode)
+                  .split("\n")
+                  .map((line) => (
+                    <span className="code-line" key={line}>
+                      <span aria-hidden="true" />
+                      {line}
+                    </span>
+                  ))}
+              </div>
+            </div>
+
+            <div className="result-panel diagnosis-note-card">
+              <h3>진단 안내</h3>
               <p>
                 이 결과는 과목별 실력 점수가 아니라, 공부가 점수로 쌓이지 않는 원인을 간단히
                 확인하는 진단입니다.
@@ -337,52 +359,58 @@ export default function HomePage() {
               <p>정확한 막힌 지점은 실제 문제 풀이와 상담을 통해 확인할 수 있습니다.</p>
             </div>
 
-            <div className="result-section">
+            <div className="result-panel result-section">
               <h3>공부 방식 해석</h3>
               {TYPE_RESULT_CONTENT[result.primaryType].description.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
 
-            <div className="result-section">
+            <div className="result-panel result-section">
               <h3>지금 필요한 공부 방향</h3>
-              <p>{TYPE_RESULT_CONTENT[result.primaryType].direction}</p>
+              <p>공부량을 늘리기 전에, 먼저 막히는 지점과 공부 순서를 확인해야 합니다.</p>
+              <p>틀린 문제를 다시 풀고, 왜 틀렸는지 설명할 수 있는 과정이 필요합니다.</p>
             </div>
 
-            <div className="result-section">
-              <h3>학년별 참고</h3>
+            <div className="result-panel result-section">
+              <h3>학년별 조언</h3>
               <p>{GRADE_ADVICE[grade]}</p>
             </div>
 
-            <div className="result-section">
-              <h3>최근 점수대 참고</h3>
-              <p>{SCORE_BAND_COMMENT[scoreBand]}</p>
-            </div>
-
-            <div className="contact-block">
-              <h3>상담문의</h3>
-              <p>031-487-2300 / 010-5020-0003</p>
+            <div className="result-panel cta-card">
+              <h3>이제 필요한 건 공부 방향입니다</h3>
+              <p>테스트는 현재 상태를 확인하는 시작입니다.</p>
               <p>
-                진단 결과를 보고 우리 아이에게 필요한 공부 방향이 궁금하다면 입시코드학원으로
-                문의해주세요.
+                입시코드학원에서는 학생의 결과를 바탕으로 무엇을 먼저 고쳐야 하는지, 어떤
+                공부 순서로 가야 하는지 구체적으로 안내해드립니다.
+              </p>
+              <p className="cta-emphasis">진단 결과만 보지 말고, 방향까지 확인해보세요.</p>
+              <a className="primary-button call-button" href="tel:0314872300">
+                학습 방향 상담받기
+              </a>
+              <p className="phone-copy">031-487-2300 / 010-5020-0003</p>
+              <p className="helper-copy">
+                상담 시 진단 결과를 말씀해주시면 더 빠르게 안내받을 수 있습니다.
               </p>
             </div>
 
-            <div className="privacy-block">
-              <h3>개인정보 미수집 안내</h3>
-              <p>
-                입시코드학원의 5분 공부유형 테스트는 이름, 전화번호, 학교명 등 개인을 직접
-                식별할 수 있는 정보를 수집하지 않습니다.
-              </p>
-              <p>
-                진단 과정에서 선택하는 학년, 최근 점수대, 설문 응답, 진단 결과는 개인 식별이
-                불가능한 통계 및 서비스 개선 목적으로만 활용됩니다.
-              </p>
-              <p>
-                정확한 학습 상담을 원하실 경우 전단지 또는 결과 화면에 안내된 학원 연락처로
-                직접 문의해주세요.
-              </p>
-            </div>
+            <details className="privacy-accordion">
+              <summary>개인정보 미수집 안내 보기</summary>
+              <div>
+                <p>
+                  입시코드학원의 5분 공부유형 테스트는 이름, 전화번호, 학교명 등 개인을 직접
+                  식별할 수 있는 정보를 수집하지 않습니다.
+                </p>
+                <p>
+                  진단 과정에서 선택하는 학년, 최근 점수대, 설문 응답, 진단 결과는 개인 식별이
+                  불가능한 통계 및 서비스 개선 목적으로만 활용됩니다.
+                </p>
+                <p>
+                  정확한 학습 상담을 원하실 경우 전단지 또는 결과 화면에 안내된 학원 연락처로
+                  직접 문의해주세요.
+                </p>
+              </div>
+            </details>
 
             <p className={`save-status ${saveState}`}>
               {saveState === "saving" && "테스트 결과를 저장하고 있습니다."}
@@ -392,7 +420,7 @@ export default function HomePage() {
 
             <div className="call-bar">
               <a className="primary-button call-button" href="tel:0314872300">
-                전화 문의하기
+                학습 방향 상담받기
               </a>
               <button className="secondary-button" type="button" onClick={restart}>
                 다시 테스트하기
