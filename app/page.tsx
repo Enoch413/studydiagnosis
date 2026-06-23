@@ -381,6 +381,14 @@ export default function HomePage() {
                 학습 방향 상담받기
               </a>
               <p className="phone-copy">031-487-2300 / 010-5020-0003</p>
+              <a
+                className="blog-link"
+                href="https://blog.naver.com/codeaca"
+                target="_blank"
+                rel="noreferrer"
+              >
+                입시코드 블로그에서 더 자세히 보기
+              </a>
               <p className="helper-copy">
                 상담 시 진단 결과를 말씀해주시면 더 빠르게 안내받을 수 있습니다.
               </p>
