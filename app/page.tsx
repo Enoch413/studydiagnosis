@@ -204,20 +204,20 @@ export default function HomePage() {
       <div className="mobile-shell">
         {step === "start" && (
           <section className="screen-card start-screen">
+            <div className="start-brand" aria-label="입시코드학원">
+              <img src="/assets/code-academy-mark.png" alt="입시코드학원 CODE" />
+            </div>
             <p className="eyebrow">5분 공부유형 테스트</p>
-            <h1>공부했는데 왜 안 오를까?</h1>
+            <h1 className="hero-title">
+              <span>공부했는데</span>
+              <strong>왜 안 오를까?</strong>
+            </h1>
             <p className="lead">
               간단한 12문항으로
               <br />
               내 공부가 어디서 막히는지 확인해보세요.
             </p>
-            <p className="support">
-              영어·수학 모두에 적용되는
-              <br />
-              공부 방식 진단입니다.
-            </p>
-            <div className="info-band">
-              <span>개인정보 입력 없이 바로 진행됩니다.</span>
+            <div className="info-band start-note">
               <span>전단지 QR에서 바로 이어지는 5분 테스트입니다.</span>
             </div>
             <button className="primary-button" type="button" onClick={() => setStep("grade")}>
@@ -378,6 +378,9 @@ export default function HomePage() {
             </div>
 
             <div className="result-panel cta-card">
+              <div className="cta-logo-wrap">
+                <img src="/assets/code-academy-mark.png" alt="입시코드학원 CODE" />
+              </div>
               <h3>이제 필요한 건 공부 방향입니다</h3>
               <p>테스트는 현재 상태를 확인하는 시작입니다.</p>
               <p>
