@@ -188,17 +188,6 @@ export default function HomePage() {
     }, 180);
   }
 
-  function restart() {
-    setStep("start");
-    setGrade(null);
-    setScoreBand(null);
-    setQuestionIndex(0);
-    setAnswers({});
-    setResult(null);
-    setSaveState("idle");
-    setSelectedAnswer(null);
-  }
-
   return (
     <main className="app-page">
       <div className="mobile-shell">
@@ -420,15 +409,6 @@ export default function HomePage() {
               {saveState === "saved" && "테스트 결과 저장 요청이 개인정보 없이 전송되었습니다."}
               {saveState === "failed" && "결과 저장이 지연되고 있습니다. 상담 문의는 바로 가능합니다."}
             </p>
-
-            <div className="call-bar">
-              <a className="primary-button call-button" href="tel:0314872300">
-                학습 방향 상담받기
-              </a>
-              <button className="secondary-button" type="button" onClick={restart}>
-                다시 테스트하기
-              </button>
-            </div>
           </section>
         )}
       </div>
